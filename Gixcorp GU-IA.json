@@ -1,0 +1,272 @@
+{
+  "name": "Gixcorp GU-IA",
+  "nodes": [
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=10"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        448,
+        304
+      ],
+      "id": "23520f89-7ce7-4e77-99bc-3193e5752cb4",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "model": "gemma4:31b",
+        "options": {
+          "numPredict": 220
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        320,
+        208
+      ],
+      "id": "5635df80-55f7-4e7c-9bc1-6a3015124e1e",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "cY4jXkHa9amgJOoK",
+          "name": "Ollama gixcorp"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "body.image_base64",
+        "options": {
+          "fileName": "image.png",
+          "mimeType": "image/png"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        32,
+        -32
+      ],
+      "id": "a6bf2179-b5d3-4038-a642-3486b03c85ea",
+      "name": "convierte imagen en binario"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "gemma4:31b",
+          "mode": "list",
+          "cachedResultName": "gemma4:31b"
+        },
+        "text": "=Analiza la imagen adjunta siguiendo estos pasos:\n\nLocalización: Confirma la identificación de la obra comparando los rasgos visuales con el contexto proporcionado.\n\nDescripción Formal: Describe la estructura visual. ¿Cómo guía el artista la mirada del espectador? Analiza la técnica y el estilo (ej. Barroco, Impresionismo, etc.).\n\nAnálisis Iconográfico: Basándote en el contexto recuperado, explica qué significan los elementos presentes. Identifica personajes, símbolos narrativos y la escena representada.\n\nInterpretación Narrativa: Explica la historia que la obra intenta contar y cómo los elementos formales refuerzan ese mensaje.\n\nRestricción Crítica: No menciones elementos externos a la obra (como el soporte del museo o la iluminación de la habitación donde se tomó la foto). Enfócate solo en el \"mundo\" dentro del cuadro o la pieza.",
+        "simplify": false,
+        "options": {
+          "system": "=Eres un Agente Experto en Curaduría e Historia del Arte. Tu especialidad es el análisis técnico, formal e iconográfico de obras visuales (pintura, escultura y artes gráficas).\n\nProtocolo de Análisis:\n\nSegmentación Visual: Antes de describir, identifica los límites de la obra artística en la imagen. Ignora estrictamente el fondo físico (paredes de museos, marcos excesivos, personas alrededor o reflejos). Céntrate exclusivamente en el contenido de la obra.\n\nAnálisis Formal Estilístico: Evalúa la composición, el uso de la luz (claroscuro, luz plana, etc.), la paleta cromática y la factura (pincelada o textura del material).\n\nTono: Profesional, académico, descriptivo y analítico. Evita adjetivos subjetivos como \"hermoso\" o \"impresionante\"; utiliza terminología técnica (e.g., \"composición centrípeta\", \"perspectiva atmosférica\")."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.ollama",
+      "typeVersion": 1,
+      "position": [
+        224,
+        -32
+      ],
+      "id": "c1c393fd-e4eb-44fc-80c8-ceb07dd0db71",
+      "name": "Analiza la imagen",
+      "credentials": {
+        "ollamaApi": {
+          "id": "cY4jXkHa9amgJOoK",
+          "name": "Ollama gixcorp"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=ANALISIS:\n{{ $json.message.content }}\n\nPREGUNTA DEL USUARIO:\nQue me puedes decir sobre este dibujo, eso son tijeras para que crees que sirvan?",
+        "options": {
+          "systemMessage": "=Eres un Guía de Galería y Narrador de Historias Artísticas. Tu misión es transformar descripciones técnicas y académicas en relatos cautivadores, breves y evocadores para un público general.\n\nTus Reglas de Oro:\n\nFiltro de Esencia: Extrae los 2 o 3 puntos más impactantes del análisis técnico (emoción, movimiento o simbolismo clave).\n\nTono: Abandona el lenguaje de catálogo. Usa un tono artístico, fluido y humano. No digas \"composición diagonal\", di \"la escena se siente en constante movimiento\".\n\nConcisión Extrema: No te extiendas. El usuario quiere entender qué hace especial a la obra en un par de párrafos cortos.\n\nProhibiciones: No menciones dimensiones, estados de conservación ni términos excesivamente teóricos (ej. \"factura matérica\" o \"reintegración cromática\"). Traduce esos conceptos a sensaciones (ej. \"pinceladas cargadas de fuerza\" o \"colores que parecen brillar desde el interior\").\n\nPersonalidad: Eres culto pero cercano, como alguien que te cuenta el secreto detrás de un cuadro mientras caminan por un museo."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "89ec41ad-7667-484d-9d10-f85173a6c8f0",
+      "name": "GU-IA"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4abfb527-96f0-48f4-a68b-cb52e2fcc3de",
+              "name": "output",
+              "value": "={{ $('GU-IA').item.json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        768,
+        0
+      ],
+      "id": "95233d91-54a5-4206-8127-a6de5b3d67e9",
+      "name": "Da la respuesta"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "099aafb3-27de-473e-a1a7-934d77943d3f",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -464,
+        -16
+      ],
+      "id": "1a587e89-d0bc-4d11-9558-c766ff46c6fd",
+      "name": "Recibe la petición de raspberry",
+      "webhookId": "099aafb3-27de-473e-a1a7-934d77943d3f"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d4db359c-4815-4429-8bdb-bcbecae98dff",
+              "leftValue": "={{ $json.body.image_base64 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -240,
+        -16
+      ],
+      "id": "24cd8ec3-9a2d-48c5-bb05-e89797840f59",
+      "name": "Comprueba si existe la imagen"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "GU-IA",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "GU-IA",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "convierte imagen en binario": {
+      "main": [
+        [
+          {
+            "node": "Analiza la imagen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analiza la imagen": {
+      "main": [
+        [
+          {
+            "node": "GU-IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GU-IA": {
+      "main": [
+        [
+          {
+            "node": "Da la respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recibe la petición de raspberry": {
+      "main": [
+        [
+          {
+            "node": "Comprueba si existe la imagen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Comprueba si existe la imagen": {
+      "main": [
+        [
+          {
+            "node": "convierte imagen en binario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "6c05518d-a5f3-44c6-b46b-a632692164c4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b2890a5e8660b9abac14fce05eba7112129062fbbdd0be0c954315394bf6cd31"
+  },
+  "id": "jhmkTXsoopebhLvX",
+  "tags": []
+}
