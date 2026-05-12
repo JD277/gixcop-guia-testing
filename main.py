@@ -5,7 +5,7 @@ from tts import speak
 file = "graba.wav"
 
 def main():
-    record_prompt(file, 3)
+    record_prompt(file, 6)
     text = transcribe(file)
     print("Usuario: ", text)
     resp = ask_n8n_with_imagefile("images-test/test1.jpg",text)

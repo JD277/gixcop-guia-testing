@@ -1,3 +1,5 @@
 env
 __pycache__
 vosk-model-small-es-0.42
+es_AR-daniela-high.onnx
+es_AR-daniela-high.json
