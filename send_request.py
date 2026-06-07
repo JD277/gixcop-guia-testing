@@ -1,7 +1,7 @@
 import base64
 import requests
 
-URL_TEXT = "http://localhost:5678/webhook/099aafb3-27de-473e-a1a7-934d77943d3f" # Set the API URL
+URL_TEXT = "https://newserver-n8n.5bxr29.easypanel.host/webhook-test/099aafb3-27de-473e-a1a7-934d77943d3f" # Set the API URL
 
 def ask_n8n(prompt:str) -> dict:
     """

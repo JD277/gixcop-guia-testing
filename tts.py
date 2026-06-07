@@ -15,4 +15,4 @@ def speak(text):
         voice.synthesize_wav(text, wav_file, syn_config=syn_config)
 
 if __name__ == "__main__":
-    speak("Lo primero que atrapa es ese contraste tan fuerte: estamos refugiados en una especie de cueva cálida y rojiza, pero desde ahí contemplamos un mundo exterior que brilla, lleno de aire y libertad. Lo que parece una espada o unas tijeras en el suelo es, en realidad, la clave de toda la historia. No son herramientas para cortar papel o tela, sino el símbolo de un conflicto que ya terminó. Es una espada abandonada.")
+    speak("Lo primero que atrapa es ese")
