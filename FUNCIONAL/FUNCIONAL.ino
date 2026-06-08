@@ -6,13 +6,13 @@
 // ====================== Libraries ====================== //
 
 // ====================== Wi-fi Config ====================== //
-const char* ssid = "TP-Link MIGUEL";
-const char* password = "jdam1825";
+const char* ssid = "LA BENDICION DE DIOS ";
+const char* password = "LOSCATAMOS05";
 const char* webhookUrl = "https://newserver-n8n.5bxr29.easypanel.host/webhook/099aafb3-27de-473e-a1a7-934d77943d3f";
 // ====================== Wi-fi Config ====================== //
 
 UNIHIKER_K10 k10;
-Music music;
+Music music; 
 bool wifiConnected = false;
 bool ocupado = false;
 
@@ -24,7 +24,6 @@ void mostrarTexto(const char* texto, int x, int y, uint32_t color) {
   k10.canvas->updateCanvas();
 }
 
-// Escribe un archivo directamente en Base64 dentro de otro archivo abierto (Streaming a SD)
 void writeAudioAsBase64ToPaquete(File &audioFile, File &paqueteFile) {
   uint8_t inputBuffer[3];
   uint8_t outputBuffer[4];
@@ -110,29 +109,25 @@ void onButtonAPressed() {
   ocupado = true;
   k10.rgb->write(-1, 0x00FF00); 
   
-  // 🔹 PASO 1: Captura de imagen limpia
   Serial.println("📸 Capturando foto...");
   k10.canvas->canvasClear(); 
   k10.setBgCamerImage(true);  
   k10.canvas->updateCanvas(); 
   delay(1200); 
   
-  k10.photoSaveToTFCard("S:/photo.bmp");
+  k10.photoSaveToTFCard("S:/photo.bmp"); 
   k10.setBgCamerImage(false);
   k10.canvas->canvasClear();
   k10.canvas->updateCanvas();
   delay(300);
   
-  // 🔹 PASO 2: Grabar audio (2 segundos)
   mostrarTexto("Grabando audio...", 20, 100, 0xFFFF00);
-  music.recordSaveToTFCard("S:/sound.wav", 4);
+  music.recordSaveToTFCard("S:/sound.wav", 4); 
   delay(300);
 
-  // 🔹 PASO 3: Ensamble del paquete combinado en la SD (RAM Cero)
   Serial.println("📦 Creando paquete combinado en la SD...");
   mostrarTexto("Empaquetando...", 20, 100, 0x00FFFF);
   
-  // Si existía un paquete anterior, lo borramos para asegurar espacio limpio
   if (SD.exists("/paquete.bin")) {
     SD.remove("/paquete.bin");
   }
@@ -151,10 +146,8 @@ void onButtonAPressed() {
     return;
   }
 
-  // Guardamos el tamaño exacto de la foto original para pasárselo a n8n
   long fotoOriginalSize = foto.size();
 
-  // 1. Copiar los bytes binarios de la foto directamente
   uint8_t copyBuf[512];
   while (foto.available()) {
     int len = foto.read(copyBuf, sizeof(copyBuf));
@@ -162,18 +155,12 @@ void onButtonAPressed() {
   }
   foto.close();
 
-  // 2. Inyectar el divisor textual exacto
   paquete.print("|||");
 
-  // 3. Convertir y volcar el audio en Base64 en tiempo real
   writeAudioAsBase64ToPaquete(audio, paquete);
   audio.close();
-  
-  // Guardamos el tamaño total del paquete y cerramos el archivo para salvar cambios
-  long paqueteTotalSize = paquete.size();
   paquete.close();
 
-  // 🔹 PASO 4: Enviar el paquete unificado usando el método nativo robusto
   File paqueteEnvio = SD.open("/paquete.bin", FILE_READ);
   if (!paqueteEnvio) {
     Serial.println("❌ Error al reabrir el paquete unificado.");
@@ -186,32 +173,74 @@ void onButtonAPressed() {
 
   HTTPClient http;
   http.begin(webhookUrl);
-  http.setTimeout(30000); // 30 segundos de paciencia para n8n
   
-  // Enviamos metadatos ligeros e inofensivos en los headers (no causan desborde)
+  http.setTimeout(360000); // Mantenemos tus 6 minutos de tolerancia máxima
+  
   http.addHeader("Content-Type", "application/octet-stream");
   http.addHeader("X-Foto-Size", String(fotoOriginalSize));
 
-  // El método nativo de streaming por fragmentos que el core de Unihiker maneja a la perfección
   int httpCode = http.sendRequest("POST", &paqueteEnvio, paqueteEnvio.size());
   paqueteEnvio.close();
 
-  // 🔹 PASO 5: Evaluar respuesta
   if (httpCode > 0) {
     Serial.printf("📥 Servidor n8n respondió: %d\n", httpCode);
-    if (httpCode >= 200 && httpCode < 300) {
-      mostrarTexto("Enviado OK", 60, 100, 0x00FF00);
+    
+    if (httpCode == HTTP_CODE_OK) {
+      mostrarTexto("Procesando Voz...", 20, 100, 0x00FF00);
+      Serial.println("📥 Descargando respuesta binaria de n8n...");
+      
+      // Cambiar a /response.wav si mantienes la salida OpenAI en MP3
+      if (SD.exists("/response.wav")) {
+        SD.remove("/response.wav");
+      }
+      
+      File audioRespuesta = SD.open("/response.wav", FILE_WRITE);
+      if (audioRespuesta) {
+        WiFiClient* stream = http.getStreamPtr();
+        uint8_t bufferDescarga[1024]; // Aumentamos el buffer a 1024 para mayor velocidad
+        
+        // 🔄 NUEVO BUCLE DE DESCARGA SEGURO A PRUEBA DE CORTES PREMATUROS
+        while (http.connected() && stream->available() == 0) {
+          delay(10); // Espera activa muy corta en caso de pequeños retrasos de red
+        }
+        
+        int bytesLeidos = 0;
+        while (http.connected() || stream->available()) {
+          while (stream->available() > 0) {
+            int len = stream->read(bufferDescarga, sizeof(bufferDescarga));
+            if (len > 0) {
+              audioRespuesta.write(bufferDescarga, len);
+              bytesLeidos += len;
+            }
+          }
+          delay(1);
+        }
+        audioRespuesta.close();
+        Serial.printf("💾 Descarga completa. Total bytes guardados: %d\n", bytesLeidos);
+        
+        mostrarTexto("Hablando...", 40, 100, 0xFF00FF);
+        Serial.println("🔊 Reproduciendo respuesta de la IA...");
+        
+        // Reproducir el archivo descargado
+        music.playTFCardAudio("S:/response.wav"); 
+        
+      } else {
+        Serial.println("❌ No se pudo crear el archivo en la SD.");
+        mostrarTexto("Error local File", 20, 100, 0xFF0000);
+      }
+      
     } else {
+      Serial.printf("❌ n8n retornó código de error: %d\n", httpCode);
       mostrarTexto("Error n8n", 50, 100, 0xFF0000);
     }
   } else {
     Serial.printf("❌ Error de envío. Código: %s\n", http.errorToString(httpCode).c_str());
-    mostrarTexto("Error HTTPS", 50, 100, 0xFF0000);
+    mostrarTexto("Error Envio", 40, 100, 0xFF0000);
   }
 
   http.end();
-  delay(2000);
+  delay(1000);
   mostrarTexto("Listo", 100, 100, 0x00FF00);
-  k10.rgb->write(-1, 0x000000); 
+  k10.rgb->write(-1, 0, 0, 0); 
   ocupado = false;
 }
